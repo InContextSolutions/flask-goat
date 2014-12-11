@@ -27,9 +27,6 @@ class Goat(object):
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
 
-        if hasattr(app, 'teardown_appcontext'):
-            app.teardown_appcontext(self.teardown)
-
     def _connect(self):
         if current_app.config[_G + 'REDIS'].startswith('tcp'):
             _, host, port_db = current_app.config[_G + 'REDIS'].split(':')
