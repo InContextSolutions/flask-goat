@@ -28,7 +28,10 @@ class Goat(object):
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
         u = urlparse(self.app.config[_G + 'CALLBACK'])
-        app.add_url_rule(u.path, view_func=self._callback)
+        if u.path != '':
+            app.add_url_rule(u.path, view_func=self._callback)
+        else:
+            app.add_url_rule('/', view_func=self._callback)
 
     def _connect(self):
         if self.app.config[_G + 'REDIS'].startswith('tcp'):

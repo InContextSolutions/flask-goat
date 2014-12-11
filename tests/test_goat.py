@@ -8,7 +8,7 @@ class TestGoat(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)
         self.app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
-        self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com')
+        self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com/')
 
     def test_smoke(self):
         with self.app.app_context():
