@@ -1,5 +1,5 @@
 import os
-from flask import Flask, session, render_template, redirect, url_for, flash
+from flask import Flask, session, render_template, redirect, url_for
 from flask.ext.goat import Goat
 
 app = Flask(__name__)
@@ -25,7 +25,6 @@ def logout():
     if 'user' in session:
         session.pop('user')
         session.pop('teams')
-        flash("You are logged out.")
     return redirect(url_for('login'))
 
 
