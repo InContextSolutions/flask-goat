@@ -2,12 +2,13 @@ import requests
 import redis
 import simplejson as json
 from uuid import uuid4
-from flask import current_app, request, abort, session, redirect
+from flask import current_app, request, abort, session, redirect, url_for
 
 try:
     from urllib import urlencode
+    from urlparse import urlparse
 except:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
 
 
 _G = 'GOAT_'
@@ -17,9 +18,8 @@ API = 'https://api.github.com'
 
 class Goat(object):
 
-    def __init__(self, app, home_url):
+    def __init__(self, app):
         self.app = app
-        self.home = home_url
         if app is not None:
             self.init_app(app)
 
@@ -27,7 +27,8 @@ class Goat(object):
         app.config.setdefault(_G + 'REDIS', 'tcp:localhost:6379,0')
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
-        app.add_url_rule('/goat', view_func=self._callback)
+        u = urlparse(self.app.config[_G + 'CALLBACK'])
+        app.add_url_rule(u.path, view_func=self._callback)
 
     def _connect(self):
         if self.app.config[_G + 'REDIS'].startswith('tcp'):
@@ -39,13 +40,13 @@ class Goat(object):
         _, sock = self.app.config[_G + 'REDIS'].split(':')
         return redis.Redis(unix_socket_path=sock)
 
-    def make_auth_url(self, redirect_url):
+    def make_auth_url(self):
         state = str(uuid4())
         self.save_state(state)
         params = {
             'client_id': current_app.config[_G + 'CLIENT_ID'],
             'state': state,
-            'redirect_uri': redirect_url,
+            'redirect_uri': current_app.config[_G + 'CALLBACK'],
             'scope': 'read:org'}
         return OAUTH + '/authorize?' + urlencode(params)
 
@@ -60,7 +61,8 @@ class Goat(object):
         token = self.get_token(code)
         session['user'] = self.get_username(token)
         session['teams'] = self.get_teams(token)
-        return redirect(self.home)
+        print "redirection"
+        return redirect(url_for('index'))
 
     def get_token(self, code):
         params = {
