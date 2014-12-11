@@ -7,7 +7,7 @@ class TestGoat(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.app.config.setdefault('GOAT_CLIENT_ID', "publicid")
+        self.app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
 
     def test_smoke(self):
         with self.app.app_context():
@@ -22,10 +22,11 @@ class TestGoat(unittest.TestCase):
     def test_make_auth_url(self):
         with self.app.app_context():
             g = Goat(self.app)
-            g.uuid4 = lambda: "csrftoken"
             go_to = 'https://example.com'
             url = g.make_auth_url(go_to)
-            self.assertEqual(
-                url,
-                OAUTH + '/authorize?scope=read%3Aorg&state=csrftoken&' +
-                'redirect_uri=https%3A%2F%2Fexample.com&client_id=publicid')
+            endpoint, params = url.split('?')
+            self.assertEqual(endpoint, OAUTH + '/authorize')
+            paramdict = dict([pair.split('=') for pair in params.split('&')])
+            self.assertEqual(len(paramdict), 4)
+            self.assertEqual(paramdict['client_id'], 'publicid')
+            self.assertEqual(paramdict['scope'], 'read:org')
