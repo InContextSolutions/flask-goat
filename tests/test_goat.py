@@ -8,7 +8,7 @@ class TestGoat(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)
         self.app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
-        self.app.config.setdefault('GOAT_CALLBACK', 'http://127.0.0.1:9000/callback')
+        self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com')
 
     def test_smoke(self):
         with self.app.app_context():
@@ -23,8 +23,7 @@ class TestGoat(unittest.TestCase):
     def test_make_auth_url(self):
         with self.app.app_context():
             g = Goat(self.app)
-            go_to = 'https://example.com'
-            url = g.make_auth_url(go_to)
+            url = g.make_auth_url()
             endpoint, params = url.split('?')
             self.assertEqual(endpoint, OAUTH + '/authorize')
             paramdict = dict([pair.split('=') for pair in params.split('&')])
