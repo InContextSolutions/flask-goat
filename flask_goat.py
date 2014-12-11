@@ -2,6 +2,7 @@ import requests
 import redis
 import urllib
 import simplejson as json
+from uuid import uuid4
 from flask import current_app
 from flask import _app_ctx_stack as stack
 
@@ -39,6 +40,16 @@ class Goat(object):
         ctx = stack.top
         if hasattr(ctx, 'redis'):
             ctx.redis.close()
+
+    def make_auth_url(self, redirect_url):
+        state = str(uuid4())
+        self.save_state(state)
+        params = {
+            'client_id': current_app.config[_G + 'CLIENT_ID'],
+            'state': state,
+            'redirect_uri': redirect_url,
+            'scope': 'user:email,read:org'}
+        return OAUTH + '/authorize?' + urllib.urlencode(params)
 
     def get_token(self, code):
         params = {
