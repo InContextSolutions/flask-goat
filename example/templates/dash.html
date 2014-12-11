@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container">
+<h1>Welcome back {{user}}!</h1>
+<ul>{% for team in teams %}
+    <li>{{team}}</li>
+{% endfor %}</ul>
+</div>
+{% endblock %}
