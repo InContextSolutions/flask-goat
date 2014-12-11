@@ -23,6 +23,9 @@ setup(
     platforms='any',
     install_requires=[
         'Flask'
+        'redis',
+        'simplejson',
+        'requests',
     ],
     classifiers=[
         'Environment :: Web Environment',

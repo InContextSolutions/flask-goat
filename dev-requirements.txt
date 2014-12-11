@@ -1,0 +1,8 @@
+Flask
+coverage
+nose
+pep8
+pyflakes
+redis
+requests
+simplejson
