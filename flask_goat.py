@@ -1,13 +1,15 @@
-from future.standard_library import install_aliases
-install_aliases()
-
 import requests
 import redis
 import simplejson as json
 from uuid import uuid4
-from urllib.parse import urlencode
 from flask import current_app, request, abort
 from flask import _app_ctx_stack as stack
+
+try:
+    from urllib import urlencode
+except:
+    from urllib.parse import urlencode
+
 
 _G = 'GOAT_'
 OAUTH = 'https://github.com/login/oauth'
