@@ -2,7 +2,7 @@ import requests
 import redis
 import simplejson as json
 from uuid import uuid4
-from flask import current_app, request, abort
+from flask import current_app, request, abort, session, redirect
 
 try:
     from urllib import urlencode
@@ -17,8 +17,9 @@ API = 'https://api.github.com'
 
 class Goat(object):
 
-    def __init__(self, app):
+    def __init__(self, app, home_url):
         self.app = app
+        self.home = home_url
         if app is not None:
             self.init_app(app)
 
@@ -26,15 +27,16 @@ class Goat(object):
         app.config.setdefault(_G + 'REDIS', 'tcp:localhost:6379,0')
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
+        app.add_url_rule('/goat', view_func=self._callback)
 
     def _connect(self):
-        if current_app.config[_G + 'REDIS'].startswith('tcp'):
-            _, host, port_db = current_app.config[_G + 'REDIS'].split(':')
+        if self.app.config[_G + 'REDIS'].startswith('tcp'):
+            _, host, port_db = self.app.config[_G + 'REDIS'].split(':')
             port, db = port_db.split(',')
             port = int(port)
             db = int(db)
             return redis.Redis(host=host, port=port, db=db)
-        _, sock = current_app.config[_G + 'REDIS'].split(':')
+        _, sock = self.app.config[_G + 'REDIS'].split(':')
         return redis.Redis(unix_socket_path=sock)
 
     def make_auth_url(self, redirect_url):
@@ -47,7 +49,7 @@ class Goat(object):
             'scope': 'read:org'}
         return OAUTH + '/authorize?' + urlencode(params)
 
-    def handle_callback(self):
+    def _callback(self):
         error = request.args.get('error', '')
         if error:
             return (None, [])
@@ -56,9 +58,9 @@ class Goat(object):
             abort(403)
         code = request.args.get('code')
         token = self.get_token(code)
-        user = self.get_username(token)
-        teams = self.get_teams(token)
-        return (user, teams)
+        session['user'] = self.get_username(token)
+        session['teams'] = self.get_teams(token)
+        return redirect(self.home)
 
     def get_token(self, code):
         params = {
@@ -88,8 +90,8 @@ class Goat(object):
         return teams
 
     def save_state(self, state):
-        current_app.redis.setex(state, 1000, '1')
+        self.app.redis.setex(state, '1', 1000)
 
     def is_valid_state(self, state):
-        value = current_app.redis.get(state)
+        value = self.app.redis.get(state)
         return value is not None
