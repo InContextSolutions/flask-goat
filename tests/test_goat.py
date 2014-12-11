@@ -23,5 +23,5 @@ class TestGoat(unittest.TestCase):
         with self.app.app_context():
             g = Goat(self.app)
             go_to = 'https://example.com'
-            url = g.test_make_auth_url(go_to)
+            url = g.make_auth_url(go_to)
             self.assertEqual(url, 'xxxx')
