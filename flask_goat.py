@@ -1,8 +1,11 @@
+from future.standard_library import install_aliases
+install_aliases()
+
 import requests
 import redis
-import urllib
 import simplejson as json
 from uuid import uuid4
+from urllib.parse import urlencode
 from flask import current_app, request, abort
 from flask import _app_ctx_stack as stack
 
@@ -49,7 +52,7 @@ class Goat(object):
             'state': state,
             'redirect_uri': redirect_url,
             'scope': 'read:org'}
-        return OAUTH + '/authorize?' + urllib.urlencode(params)
+        return OAUTH + '/authorize?' + urlencode(params)
 
     def handle_callback(self):
         error = request.args.get('error', '')
@@ -71,7 +74,7 @@ class Goat(object):
             'code': code
         }
         resp = requests.post(
-            OAUTH + '/access_token?' + urllib.urlencode(params),
+            OAUTH + '/access_token?' + urlencode(params),
             headers={'Accept': 'application/json'}
         )
         data = json.loads(resp.text)
