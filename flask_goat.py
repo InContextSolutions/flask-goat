@@ -61,7 +61,6 @@ class Goat(object):
         token = self.get_token(code)
         session['user'] = self.get_username(token)
         session['teams'] = self.get_teams(token)
-        print "redirection"
         return redirect(url_for('index'))
 
     def get_token(self, code):
