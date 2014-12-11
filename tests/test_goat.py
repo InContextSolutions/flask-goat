@@ -1,6 +1,6 @@
 import unittest
 from flask import Flask
-from flask.ext.goat import Goat
+from flask.ext.goat import Goat, OAUTH
 
 
 class TestGoat(unittest.TestCase):
@@ -22,6 +22,10 @@ class TestGoat(unittest.TestCase):
     def test_make_auth_url(self):
         with self.app.app_context():
             g = Goat(self.app)
+            g.uuid4 = lambda: "csrftoken"
             go_to = 'https://example.com'
             url = g.make_auth_url(go_to)
-            self.assertEqual(url, 'xxxx')
+            self.assertEqual(
+                url,
+                OAUTH + '/authorize?scope=read%3Aorg&state=csrftoken&' +
+                'redirect_uri=https%3A%2F%2Fexample.com&client_id=publicid')

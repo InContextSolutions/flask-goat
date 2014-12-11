@@ -48,7 +48,7 @@ class Goat(object):
             'client_id': current_app.config[_G + 'CLIENT_ID'],
             'state': state,
             'redirect_uri': redirect_url,
-            'scope': 'user:email,read:org'}
+            'scope': 'read:org'}
         return OAUTH + '/authorize?' + urllib.urlencode(params)
 
     def handle_callback(self):
