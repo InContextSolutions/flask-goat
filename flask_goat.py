@@ -92,10 +92,8 @@ class Goat(object):
         return teams
 
     def save_state(self, state):
-        ctx = stack.top
-        ctx.redis.setex(state, 1000, '1')
+        current_app.redis.setex(state, 1000, '1')
 
     def is_valid_state(self, state):
-        ctx = stack.top
-        value = ctx.redis.get(state)
+        value = current_app.redis.get(state)
         return value is not None
