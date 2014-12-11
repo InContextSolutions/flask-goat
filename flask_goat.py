@@ -26,6 +26,7 @@ class Goat(object):
     def init_app(self, app):
         """Sets up callback and connects to Redis for CSRF token management."""
         app.config.setdefault('GOAT_REDIS', 'tcp:localhost:6379,0')
+        app.config.setdefault('GOAT_SCOPE', 'read:org')
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
         u = urlparse(self.app.config['GOAT_CALLBACK'])
@@ -47,14 +48,13 @@ class Goat(object):
         return redis.Redis(unix_socket_path=sock)
 
     def _auth_url(self):
-        """Generates an OAuth authorization url to serve to the user."""
         state = str(uuid4())
         self._save_state(state)
         params = {
             'client_id': current_app.config['GOAT_CLIENT_ID'],
             'state': state,
             'redirect_uri': current_app.config['GOAT_CALLBACK'],
-            'scope': 'read:org'}
+            'scope': current_app.config['GOAT_SCOPE']}
         return OAUTH + '/authorize?' + urlencode(params)
 
     def _login(self):
