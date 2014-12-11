@@ -2,7 +2,8 @@ import requests
 import redis
 import simplejson as json
 from uuid import uuid4
-from flask import current_app, request, abort, session, redirect, url_for, render_template
+from flask import current_app, request, abort, session,\
+    redirect, url_for, render_template
 
 try:
     from urllib import urlencode
