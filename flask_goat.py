@@ -2,7 +2,7 @@ import requests
 import redis
 import simplejson as json
 from uuid import uuid4
-from flask import current_app, request, abort, session, redirect, url_for
+from flask import current_app, request, abort, session, redirect, url_for, render_template
 
 try:
     from urllib import urlencode
@@ -31,7 +31,9 @@ class Goat(object):
         if u.path != '':
             app.add_url_rule(u.path, view_func=self._callback)
         else:
-            app.add_url_rule('/', view_func=self._callback)
+            raise UserWarning
+        app.add_url_rule('/login', 'login', view_func=self._login)
+        app.add_url_rule('/logout', 'logout', view_func=self._logout)
 
     def _connect(self):
         if self.app.config['GOAT_REDIS'].startswith('tcp'):
@@ -43,7 +45,7 @@ class Goat(object):
         _, sock = self.app.config['GOAT_REDIS'].split(':')
         return redis.Redis(unix_socket_path=sock)
 
-    def make_auth_url(self):
+    def _auth_url(self):
         """Generates an OAuth authorization url to serve to the user."""
         state = str(uuid4())
         self._save_state(state)
@@ -53,6 +55,18 @@ class Goat(object):
             'redirect_uri': current_app.config['GOAT_CALLBACK'],
             'scope': 'read:org'}
         return OAUTH + '/authorize?' + urlencode(params)
+
+    def _login(self):
+        if 'user' in session:
+            return redirect(url_for('index'))
+        url = self._auth_url()
+        return render_template(current_app.config['GOAT_LOGIN_PAGE'], url=url)
+
+    def _logout(self):
+        if 'user' in session:
+            session.pop('user')
+            session.pop('teams')
+        return redirect(url_for('login'))
 
     def _callback(self):
         error = request.args.get('error', '')

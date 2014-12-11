@@ -12,22 +12,6 @@ app.config['GOAT_CALLBACK'] = 'http://127.0.0.1:9000/callback'
 goat = Goat(app)
 
 
-@app.route('/login')
-def login():
-    if 'user' in session:
-        return redirect(url_for('index'))
-    url = goat.make_auth_url()
-    return render_template('login.html', url=url)
-
-
-@app.route('/logout')
-def logout():
-    if 'user' in session:
-        session.pop('user')
-        session.pop('teams')
-    return redirect(url_for('login'))
-
-
 @app.route('/')
 def index():
     if 'user' in session:
