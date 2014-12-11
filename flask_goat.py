@@ -23,7 +23,7 @@ class Goat(object):
             self.init_app(app)
 
     def init_app(self, app):
-        """Initialized callback route and connects to Redis for CSRF token management."""
+        """Sets up callback and connects to Redis for CSRF token management."""
         app.config.setdefault('GOAT_REDIS', 'tcp:localhost:6379,0')
         if not hasattr(app, 'redis'):
             app.redis = self._connect()
