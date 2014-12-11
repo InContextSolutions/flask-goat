@@ -29,4 +29,4 @@ class TestGoat(unittest.TestCase):
             paramdict = dict([pair.split('=') for pair in params.split('&')])
             self.assertEqual(len(paramdict), 4)
             self.assertEqual(paramdict['client_id'], 'publicid')
-            self.assertEqual(paramdict['scope'], 'read:org')
+            self.assertEqual(paramdict['scope'], 'read%3Aorg')
