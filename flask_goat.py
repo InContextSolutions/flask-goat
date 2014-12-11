@@ -3,7 +3,7 @@ import redis
 import urllib
 import simplejson as json
 from uuid import uuid4
-from flask import current_app
+from flask import current_app, request, abort
 from flask import _app_ctx_stack as stack
 
 _G = 'GOAT_'
@@ -50,6 +50,19 @@ class Goat(object):
             'redirect_uri': redirect_url,
             'scope': 'user:email,read:org'}
         return OAUTH + '/authorize?' + urllib.urlencode(params)
+
+    def handle_callback(self):
+        error = request.args.get('error', '')
+        if error:
+            return (None, [])
+        state = request.args.get('state', '')
+        if not self.is_valid_state(state):
+            abort(403)
+        code = request.args.get('code')
+        token = self.get_token(code)
+        user = self.get_username(token)
+        teams = self.get_teams(token)
+        return (user, teams)
 
     def get_token(self, code):
         params = {
