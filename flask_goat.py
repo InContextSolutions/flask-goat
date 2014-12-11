@@ -40,9 +40,6 @@ class Goat(object):
         _, sock = current_app.config[_G + 'REDIS'].split(':')
         return redis.Redis(unix_socket_path=sock)
 
-    def teardown(self, exception):
-        current_app.redis.close()
-
     def make_auth_url(self, redirect_url):
         state = str(uuid4())
         self.save_state(state)
