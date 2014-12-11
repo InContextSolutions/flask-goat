@@ -4,6 +4,9 @@ python:
     - "2.7"
     - "3.3"
 
+services:
+    - redis-server
+
 install:
     - pip install -r dev-requirements.txt
     - pip install -e .
