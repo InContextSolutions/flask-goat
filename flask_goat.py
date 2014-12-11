@@ -3,7 +3,6 @@ import redis
 import simplejson as json
 from uuid import uuid4
 from flask import current_app, request, abort
-from flask import _app_ctx_stack as stack
 
 try:
     from urllib import urlencode
@@ -42,9 +41,7 @@ class Goat(object):
         return redis.Redis(unix_socket_path=sock)
 
     def teardown(self, exception):
-        ctx = stack.top
-        if hasattr(ctx, 'redis'):
-            ctx.redis.close()
+        current_app.redis.close()
 
     def make_auth_url(self, redirect_url):
         state = str(uuid4())
