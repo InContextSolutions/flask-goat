@@ -35,9 +35,8 @@ class Goat(object):
         assert app.config.get('GOAT_CLIENT_ID')
         assert app.config.get('GOAT_CLIENT_SECRET')
         assert app.config.get('GOAT_ORGANIZATION')
-        cb_url = app.config.get('GOAT_CALLBACK')
-        if cb_url and cb_url.endswith('/'):
-            u = urlparse(cb_url)
+        if app.config.get('GOAT_CALLBACK'):
+            u = urlparse(app.config.get('GOAT_CALLBACK'))
             app.add_url_rule(u.path, view_func=self._callback)
         else:
             raise UserWarning
