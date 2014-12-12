@@ -32,14 +32,21 @@ class Goat(object):
         app.config.setdefault('GOAT_REDIS', 'tcp:localhost:6379,0')
         app.config.setdefault('', '')
         self.redis_connection = self._connect(app)
-        assert app.config.get('GOAT_CLIENT_ID')
-        assert app.config.get('GOAT_CLIENT_SECRET')
-        assert app.config.get('GOAT_ORGANIZATION')
-        if app.config.get('GOAT_CALLBACK'):
-            u = urlparse(app.config.get('GOAT_CALLBACK'))
-            app.add_url_rule(u.path, view_func=self._callback)
-        else:
+
+        if not app.config.get('GOAT_CLIENT_ID'):
             raise UserWarning
+
+        if not app.config.get('GOAT_CLIENT_SECRET'):
+            raise UserWarning
+
+        if not app.config.get('GOAT_ORGANIZATION'):
+            raise UserWarning
+
+        if not app.config.get('GOAT_CALLBACK'):
+            raise UserWarning
+
+        u = urlparse(app.config.get('GOAT_CALLBACK'))
+        app.add_url_rule(u.path, view_func=self._callback)
         app.add_url_rule('/login', 'login', view_func=self._login)
         app.add_url_rule('/logout', 'logout', view_func=self._logout)
 
