@@ -78,8 +78,15 @@ class Goat(object):
         code = request.args.get('code')
         token = self.get_token(code)
         session['token'] = token
-        session['user'] = self.get_username(token)
-        session['teams'] = self.get_teams(token)
+        username = self.get_username(token)
+        session['user'] = username
+        session['is_member'] = self.is_org_member(token, username)
+        all_teams = self._get_all_teams(token)
+        teams = []
+        for (tid, team) in all_teams:
+            if self.is_team_member(token, username, tid):
+                teams.append(team)
+        session['teams'] = teams
         return redirect(url_for('index'))
 
     def get_token(self, code):
@@ -103,14 +110,30 @@ class Goat(object):
         data = json.loads(resp.text)
         return data.get('login', None)
 
-    def get_teams(self, token):
-        """Gets a list of the user's teams within the organization."""
+    def _get_all_teams(self, token):
+        """Gets a list of all teams within the organization."""
         org = current_app.config['GOAT_ORGANIZATION']
         url = API + '/orgs/{}/teams?access_token={}'.format(org, token)
         resp = requests.get(url, headers={'Accept': 'application/json'})
         data = json.loads(resp.text)
-        teams = [t['name'] for t in data if 'name' in t]
+        teams = [(t['id'], t['name']) for t in data if 'name' in t]
         return teams
+
+    def is_org_member(self, token, username):
+        """Checks if the user is a member of the organization."""
+        url = API + '/orgs/{}/members/{}'.format(
+            current_app.config['GOAT_ORGANIZATION'],
+            username)
+        resp = requests.get(url)
+        return resp.status_code == 204
+
+    def is_team_member(self, token, username, team_id):
+        """Checks if the user is an active or pending member of the team."""
+        url = API + '/teams/{}/memberships/{}'.format(
+            team_id,
+            username)
+        resp = requests.get(url)
+        return resp.status_code == 200
 
     def _save_state(self, state):
         self.app.redis.setex(state, '1', 1000)
@@ -125,11 +148,16 @@ def members_only(*teams):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            if 'teams' not in session:
+            if 'is_member' not in session:
                 redirect(url_for('login'))
-            for team in teams:
-                if team not in session['teams']:
-                    abort(403)
+            if session['is_member'] is False:
+                abort(403)
+            if len(teams) > 0:
+                if 'teams' not in session:
+                    redirect(url_for('login'))
+                for team in teams:
+                    if team not in session['teams']:
+                        abort(403)
             return f(*args, **kwargs)
         return wrapped
     return wrapper

@@ -1,6 +1,6 @@
 import os
-from flask import Flask, session, render_template, redirect, url_for
-from flask.ext.goat import Goat
+from flask import Flask, render_template, session
+from flask.ext.goat import Goat, members_only
 
 app = Flask(__name__)
 app.secret_key = 'veryverysecret'
@@ -13,12 +13,9 @@ goat = Goat(app)
 
 
 @app.route('/')
+@members_only()
 def index():
-    if 'user' in session:
-        user = session['user']
-        teams = session['teams']
-        return render_template('dash.html', user=user, teams=teams)
-    return redirect(url_for('login'))
+    return render_template('dash.html', user=session['user'], teams=session['teams'])
 
 if __name__ == '__main__':
     app.run(debug=True, port=9000)
