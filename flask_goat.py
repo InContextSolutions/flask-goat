@@ -65,9 +65,7 @@ class Goat(object):
         return render_template(current_app.config['GOAT_LOGIN_PAGE'], url=url)
 
     def _logout(self):
-        if 'user' in session:
-            session.pop('user')
-            session.pop('teams')
+        session.clear()
         return redirect(url_for('login'))
 
     def _callback(self):
@@ -79,6 +77,7 @@ class Goat(object):
             abort(403)
         code = request.args.get('code')
         token = self.get_token(code)
+        session['token'] = token
         session['user'] = self.get_username(token)
         session['teams'] = self.get_teams(token)
         return redirect(url_for('index'))
@@ -126,10 +125,8 @@ def members_only(*teams):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            # not a member of the organization
             if 'teams' not in session:
-                abort(403)
-            # verify member for each team
+                redirect(url_for('login'))
             for team in teams:
                 if team not in session['teams']:
                     abort(403)
