@@ -15,6 +15,7 @@ except:
 
 OAUTH = 'https://github.com/login/oauth'
 API = 'https://api.github.com'
+DAY = 86400
 
 
 class Goat(object):
@@ -25,7 +26,7 @@ class Goat(object):
             self.init_app(app)
 
     def init_app(self, app):
-        """Sets up callback and connects to Redis for CSRF token management."""
+        """Sets up callback and establishes Redis connection."""
         app.config.setdefault('GOAT_REDIS', 'tcp:localhost:6379,0')
         app.config.setdefault('GOAT_SCOPE', 'read:org')
         if not hasattr(app, 'redis'):
@@ -76,23 +77,11 @@ class Goat(object):
         if not self._is_valid_state(state):
             abort(403)
         code = request.args.get('code')
-
         token = self.get_token(code)
-        session['token'] = token
-
-        username = self.get_username(token)
-        session['user'] = username
-
-        # check for membership
-        if self.is_org_member(token, username):
-            session['member'] = True
-            all_teams = self._get_all_teams(token)
-            teams = []
-            for (tid, team) in all_teams:
-                if self.is_team_member(token, username, tid):
-                    teams.append(team)
-            session['teams'] = teams
-
+        user = self.get_username(token)
+        if self.is_org_member(token, user):
+            session['user'] = user
+            self.app.redis.set(user, token)
         return redirect(url_for('index'))
 
     def get_token(self, code):
@@ -116,13 +105,19 @@ class Goat(object):
         data = json.loads(resp.text)
         return data.get('login', None)
 
-    def _get_all_teams(self, token):
+    def _get_org_teams(self, token):
         """Gets a list of all teams within the organization."""
+        # try the cache
+        teams = self.app.redis.get('GOAT_TEAMS')
+        if teams:
+            return json.loads(teams)
+        # else, hit github
         org = current_app.config['GOAT_ORGANIZATION']
         url = API + '/orgs/{}/teams?access_token={}'.format(org, token)
         resp = requests.get(url, headers={'Accept': 'application/json'})
         data = json.loads(resp.text)
-        teams = [(t['id'], t['name']) for t in data if 'name' in t]
+        teams = dict([(t['name'], t['id']) for t in data if 'name' in t])
+        self.app.redis.setex('GOAT_TEAMS', json.dumps(teams), DAY)
         return teams
 
     def is_org_member(self, token, username):
@@ -133,12 +128,14 @@ class Goat(object):
         resp = requests.get(url)
         return resp.status_code == 204
 
-    def is_team_member(self, token, username, team_id):
+    def is_team_member(self, token, username, team):
         """Checks if the user is an active or pending member of the team."""
+        orgteams = self._get_org_teams(token)
+        tid = orgteams.get(team, None)
+        if tid is None:
+            return False
         url = API + '/teams/{}/memberships/{}?access_token={}'.format(
-            team_id,
-            username,
-            token)
+            tid, username, token)
         resp = requests.get(url)
         return resp.status_code == 200
 
@@ -149,18 +146,17 @@ class Goat(object):
         value = self.app.redis.get(state)
         return value is not None
 
-
-def members_only(*teams):
-    """User must have membership in all listed teams."""
-    def wrapper(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            if 'member' not in session:
-                return redirect(url_for('login'))
-            if len(teams) > 0:
+    def members_only(self, *teams):
+        """Authorization view_func decorator"""
+        def wrapper(f):
+            @wraps(f)
+            def wrapped(*args, **kwargs):
+                if 'user' not in session:
+                    return redirect(url_for('login'))
+                token = self.app.redis.get(session['user'])
                 for team in teams:
-                    if team not in session['teams']:
+                    if not self.is_team_member(token, session['user'], team):
                         abort(403)
-            return f(*args, **kwargs)
-        return wrapped
-    return wrapper
+                return f(*args, **kwargs)
+            return wrapped
+        return wrapper
