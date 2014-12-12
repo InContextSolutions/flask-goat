@@ -8,6 +8,7 @@ app.config['GOAT_CLIENT_ID'] = os.getenv('GOAT_CLIENT_ID')
 app.config['GOAT_CLIENT_SECRET'] = os.getenv('GOAT_CLIENT_SECRET')
 app.config['GOAT_ORGANIZATION'] = os.getenv('GOAT_ORGANIZATION')
 app.config['GOAT_CALLBACK'] = 'http://127.0.0.1:9000/callback'
+app.config['GOAT_LOGIN_PAGE'] = 'login.html'
 
 goat = Goat(app)
 
@@ -15,6 +16,7 @@ goat = Goat(app)
 @app.route('/')
 @members_only()
 def index():
+    print session
     return render_template('dash.html', user=session['user'], teams=session['teams'])
 
 if __name__ == '__main__':

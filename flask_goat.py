@@ -76,17 +76,23 @@ class Goat(object):
         if not self._is_valid_state(state):
             abort(403)
         code = request.args.get('code')
+
         token = self.get_token(code)
         session['token'] = token
+
         username = self.get_username(token)
         session['user'] = username
-        session['is_member'] = self.is_org_member(token, username)
-        all_teams = self._get_all_teams(token)
-        teams = []
-        for (tid, team) in all_teams:
-            if self.is_team_member(token, username, tid):
-                teams.append(team)
-        session['teams'] = teams
+
+        # check for membership
+        if self.is_org_member(token, username):
+            session['member'] = True
+            all_teams = self._get_all_teams(token)
+            teams = []
+            for (tid, team) in all_teams:
+                if self.is_team_member(token, username, tid):
+                    teams.append(team)
+            session['teams'] = teams
+
         return redirect(url_for('index'))
 
     def get_token(self, code):
@@ -129,9 +135,10 @@ class Goat(object):
 
     def is_team_member(self, token, username, team_id):
         """Checks if the user is an active or pending member of the team."""
-        url = API + '/teams/{}/memberships/{}'.format(
+        url = API + '/teams/{}/memberships/{}?access_token={}'.format(
             team_id,
-            username)
+            username,
+            token)
         resp = requests.get(url)
         return resp.status_code == 200
 
@@ -148,34 +155,12 @@ def members_only(*teams):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            if 'is_member' not in session:
-                redirect(url_for('login'))
-            if session['is_member'] is False:
-                abort(403)
+            if 'member' not in session:
+                return redirect(url_for('login'))
             if len(teams) > 0:
-                if 'teams' not in session:
-                    redirect(url_for('login'))
                 for team in teams:
                     if team not in session['teams']:
                         abort(403)
-            return f(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-
-def token_access(teams):
-    """User must have membership in all listed teams.
-    User must supply a GitHub API token in X-GitHub-Token header.
-    This is appropriate for RESTful endpoints."""
-    def wrapper(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            token = request.headers.get('X-GitHub-Token')
-            if token is None:
-                abort(403)
-            for team in current_app.goat.get_teams(token):
-                if team not in session['teams']:
-                    abort(403)
             return f(*args, **kwargs)
         return wrapped
     return wrapper
