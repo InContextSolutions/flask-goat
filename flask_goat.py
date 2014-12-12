@@ -126,16 +126,31 @@ def members_only(*teams):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-
             # not a member of the organization
             if 'teams' not in session:
                 abort(403)
-
             # verify member for each team
             for team in teams:
                 if team not in session['teams']:
                     abort(403)
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
 
+
+def token_access(teams):
+    """User must have membership in all listed teams.
+    User must supply a GitHub API token in X-GitHub-Token header.
+    This is appropriate for RESTful endpoints."""
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            token = request.headers.get('X-GitHub-Token')
+            if token is None:
+                abort(403)
+            for team in current_app.goat.get_teams(token):
+                if team not in session['teams']:
+                    abort(403)
             return f(*args, **kwargs)
         return wrapped
     return wrapper
