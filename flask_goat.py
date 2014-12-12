@@ -1,6 +1,7 @@
 import requests
 import redis
 import simplejson as json
+from functools import wraps
 from uuid import uuid4
 from flask import current_app, request, abort, session,\
     redirect, url_for, render_template
@@ -118,3 +119,23 @@ class Goat(object):
     def _is_valid_state(self, state):
         value = self.app.redis.get(state)
         return value is not None
+
+
+def members_only(*teams):
+    """User must have membership in all listed teams."""
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+
+            # not a member of the organization
+            if 'teams' not in session:
+                abort(403)
+
+            # verify member for each team
+            for team in teams:
+                if team not in session['teams']:
+                    abort(403)
+
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
