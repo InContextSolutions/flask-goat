@@ -15,7 +15,7 @@ except:
 
 class Goat(object):
 
-    """Flask Plugin for Security and User Administration via GitHub OAuth & Organization.
+    """Security and User Administration via GitHub OAuth & Organization.
     """
 
     OAUTH = 'https://github.com/login/oauth'
@@ -136,12 +136,22 @@ class Goat(object):
         teams = self.redis_connection.get('GOAT_TEAMS')
         if teams:
             return json.loads(teams)
-        org = current_app.config.get('GOAT_ORGANIZATION')
-        url = Goat.API + '/orgs/{}/teams?access_token={}'.format(org, token)
+
+        url = Goat.API + '/orgs/{}/teams?access_token={}'.format(
+            current_app.config.get('GOAT_ORGANIZATION'),
+            token
+        )
+
         resp = requests.get(url, headers={'Accept': 'application/json'})
         data = json.loads(resp.text)
         teams = dict([(t['name'], t['id']) for t in data if 'name' in t])
-        self.redis_connection.setex('GOAT_TEAMS', json.dumps(teams), Goat.REFRESH_TEAMS)
+
+        self.redis_connection.setex(
+            'GOAT_TEAMS',
+            json.dumps(teams),
+            Goat.REFRESH_TEAMS
+        )
+
         return teams
 
     def is_org_member(self, token, username):
