@@ -46,8 +46,8 @@ class Goat(object):
         assert app.config.get('GOAT_ORGANIZATION') is not None
         assert app.config.get('GOAT_CALLBACK') is not None
 
-        for var, val in Goat.DEFAULTS.iteritems():
-            app.config.setdefault(var, val)
+        for var in Goat.DEFAULTS:
+            app.config.setdefault(var, Goat.DEFAULTS[var])
 
         assert 'read:org' in app.config.get('GOAT_SCOPE').split(',')
 
