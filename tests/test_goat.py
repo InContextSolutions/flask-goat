@@ -1,6 +1,6 @@
 import unittest
 from flask import Flask
-from flask.ext.goat import Goat, OAUTH
+from flask.ext.goat import Goat
 
 
 class TestGoat(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestGoat(unittest.TestCase):
             g = Goat(self.app)
             url = g._auth_url()
             endpoint, params = url.split('?')
-            self.assertEqual(endpoint, OAUTH + '/authorize')
+            self.assertEqual(endpoint, Goat.OAUTH + '/authorize')
             paramdict = dict([pair.split('=') for pair in params.split('&')])
             self.assertEqual(len(paramdict), 4)
             self.assertEqual(paramdict['client_id'], 'publicid')
