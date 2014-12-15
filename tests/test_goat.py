@@ -30,20 +30,20 @@ class TestGoat(unittest.TestCase):
     def test_fail_for_no_client_id(self):
         app = Flask('testinitfail')
         with app.app_context():
-            self.assertRaises(UserWarning, Goat, app)
+            self.assertRaises(AssertionError, Goat, app)
 
     def test_fail_for_no_client_secret(self):
         app = Flask('testinitfail')
         app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
         with app.app_context():
-            self.assertRaises(UserWarning, Goat, app)
+            self.assertRaises(AssertionError, Goat, app)
 
     def test_fail_for_no_organization(self):
         app = Flask('testinitfail')
         app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
         app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         with app.app_context():
-            self.assertRaises(UserWarning, Goat, app)
+            self.assertRaises(AssertionError, Goat, app)
 
     def test_fail_for_no_callback(self):
         app = Flask('testinitfail')
@@ -51,4 +51,4 @@ class TestGoat(unittest.TestCase):
         app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         app.config.setdefault('GOAT_ORGANIZATION', 'organization')
         with app.app_context():
-            self.assertRaises(UserWarning, Goat, app)
+            self.assertRaises(AssertionError, Goat, app)
