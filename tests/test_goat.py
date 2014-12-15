@@ -16,12 +16,6 @@ class TestGoat(unittest.TestCase):
         with self.app.app_context():
             Goat(self.app)
 
-    def test_state(self):
-        with self.app.app_context():
-            g = Goat(self.app)
-            g._save_state('test')
-            self.assertTrue(g._is_valid_state('test'))
-
     def test_auth_url(self):
         with self.app.app_context():
             g = Goat(self.app)

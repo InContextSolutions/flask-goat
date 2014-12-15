@@ -13,65 +13,70 @@ except:
     from urllib.parse import urlencode, urlparse
 
 
-OAUTH = 'https://github.com/login/oauth'
-API = 'https://api.github.com'
-DAY = 86400
-
-
 class Goat(object):
 
+    """Flask Plugin for Security and User Administration via GitHub OAuth & Organization.
+    """
+
+    OAUTH = 'https://github.com/login/oauth'
+    API = 'https://api.github.com'
+    REFRESH_TEAMS = 86400
+
+    DEFAULTS = {
+        'GOAT_SCOPE': 'read:org',
+        'GOAT_LOGIN_PAGE': 'login.html',
+        'GOAT_REDIS': {
+            'method': 'tcp',
+            'host': 'localhost',
+            'port': 6379,
+            'db': 0,
+        }
+    }
+
     def __init__(self, app):
-        self.app = app
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app):
-        """Sets up callback and establishes Redis connection."""
-        app.config.setdefault('GOAT_SCOPE', 'read:org')
-        app.config.setdefault('GOAT_LOGIN_PAGE', 'login.html')
-        app.config.setdefault('GOAT_REDIS', 'tcp:localhost:6379,0')
-        app.config.setdefault('', '')
-        self.redis_connection = self._connect(app)
+        """Sets up callback and establishes Redis connection.
+        """
 
-        if not app.config.get('GOAT_CLIENT_ID'):
-            raise UserWarning
+        assert app.config.get('GOAT_CLIENT_ID') is not None
+        assert app.config.get('GOAT_CLIENT_SECRET') is not None
+        assert app.config.get('GOAT_ORGANIZATION') is not None
+        assert app.config.get('GOAT_CALLBACK') is not None
 
-        if not app.config.get('GOAT_CLIENT_SECRET'):
-            raise UserWarning
+        for var, val in Goat.DEFAULTS.iteritems():
+            app.config.setdefault(var, val)
 
-        if not app.config.get('GOAT_ORGANIZATION'):
-            raise UserWarning
-
-        if not app.config.get('GOAT_CALLBACK'):
-            raise UserWarning
+        assert 'read:org' in app.config.get('GOAT_SCOPE').split(',')
 
         u = urlparse(app.config.get('GOAT_CALLBACK'))
         app.add_url_rule(u.path, view_func=self._callback)
         app.add_url_rule('/login', 'login', view_func=self._login)
         app.add_url_rule('/logout', 'logout', view_func=self._logout)
+        self.redis_connection = self._connect(app)
 
     def _connect(self, app):
-        redis_uri = app.config.get('GOAT_REDIS')
-        if redis_uri.startswith('tcp'):
-            _, host, port_db = redis_uri.split(':')
-            port, db = port_db.split(',')
-            return redis.Redis(host=host, port=int(port), db=int(db))
-        _, sock = redis_uri.split(':')
-        return redis.Redis(unix_socket_path=sock)
+        params = app.config.get('GOAT_REDIS')
+        if params['method'] == 'tcp':
+            return redis.Redis(
+                host=params['host'],
+                port=params['port'],
+                db=params['db'])
+        elif params['method'] == 'sock':
+            return redis.Redis(unix_socket_path=params['sock'])
+        raise ValueError("invalid method")
 
     def _auth_url(self):
-        client_id = current_app.config.get('GOAT_CLIENT_ID')
-        scope = current_app.config.get('GOAT_SCOPE')
-        callback = current_app.config.get('GOAT_CALLBACK')
-        state = str(uuid4())
-        self._save_state(state)
         params = {
-            'client_id': client_id,
-            'state': state,
-            'redirect_uri': callback,
-            'scope': scope
+            'client_id': current_app.config.get('GOAT_CLIENT_ID'),
+            'state': str(uuid4()),
+            'redirect_uri': current_app.config.get('GOAT_CALLBACK'),
+            'scope': current_app.config.get('GOAT_SCOPE'),
         }
-        return OAUTH + '/authorize?' + urlencode(params)
+        self.redis_connection.setex(params['state'], '1', 1000)
+        return Goat.OAUTH + '/authorize?' + urlencode(params)
 
     def _login(self):
         if 'user' in session:
@@ -89,7 +94,7 @@ class Goat(object):
         if error:
             return (None, [])
         state = request.args.get('state', '')
-        if not self._is_valid_state(state):
+        if not self.redis_connection.get(state):
             abort(403)
         code = request.args.get('code')
         token = self.get_token(code)
@@ -100,70 +105,73 @@ class Goat(object):
         return redirect(url_for('index'))
 
     def get_token(self, code):
-        """Gets a user token for the GitHub API."""
-        client_id = current_app.config.get('GOAT_CLIENT_ID')
-        client_secret = current_app.config.get('GOAT_CLIENT_SECRET')
+        """Gets a user token for the GitHub API.
+        """
+
         params = {
-            'client_id': client_id,
-            'client_secret': client_secret,
+            'client_id': current_app.config.get('GOAT_CLIENT_ID'),
+            'client_secret': current_app.config.get('GOAT_CLIENT_SECRET'),
             'code': code
         }
         resp = requests.post(
-            OAUTH + '/access_token?' + urlencode(params),
+            Goat.OAUTH + '/access_token?' + urlencode(params),
             headers={'Accept': 'application/json'}
         )
         data = json.loads(resp.text)
         return data.get('access_token', None)
 
     def get_username(self, token):
-        """Gets the user's GitHub account name."""
-        url = API + '/user?access_token={}'.format(token)
+        """Gets the user's GitHub account name.
+        """
+
+        url = Goat.API + '/user?access_token={}'.format(token)
         resp = requests.get(url, headers={'Accept': 'application/json'})
         data = json.loads(resp.text)
         return data.get('login', None)
 
     def _get_org_teams(self, token):
-        """Gets a list of all teams within the organization."""
+        """Gets a list of all teams within the organization.
+        """
+
         teams = self.redis_connection.get('GOAT_TEAMS')
         if teams:
             return json.loads(teams)
         org = current_app.config.get('GOAT_ORGANIZATION')
-        url = API + '/orgs/{}/teams?access_token={}'.format(org, token)
+        url = Goat.API + '/orgs/{}/teams?access_token={}'.format(org, token)
         resp = requests.get(url, headers={'Accept': 'application/json'})
         data = json.loads(resp.text)
         teams = dict([(t['name'], t['id']) for t in data if 'name' in t])
-        self.redis_connection.setex('GOAT_TEAMS', json.dumps(teams), DAY)
+        self.redis_connection.setex('GOAT_TEAMS', json.dumps(teams), Goat.REFRESH_TEAMS)
         return teams
 
     def is_org_member(self, token, username):
-        """Checks if the user is a member of the organization."""
+        """Checks if the user is a member of the organization.
+        """
+
         org = current_app.config.get('GOAT_ORGANIZATION')
-        url = API + '/orgs/{}/members/{}'.format(org, username)
-        resp = requests.get(url)
+        url = '/orgs/{}/members/{}'.format(org, username)
+        resp = requests.get(Goat.API + url)
         return resp.status_code == 204
 
     def is_team_member(self, token, username, team):
-        """Checks if the user is an active or pending member of the team."""
+        """Checks if the user is an active or pending member of the team.
+        """
+
         teams = self._get_org_teams(token)
+
         tid = teams.get(team, None)
-        if tid:
-            url = API + '/teams/{}/memberships/{}?access_token={}'.format(
-                tid,
-                username,
-                token)
-            resp = requests.get(url)
-            return resp.status_code == 200
-        return False
+        if not tid:
+            return False
 
-    def _save_state(self, state):
-        self.redis_connection.setex(state, '1', 1000)
-
-    def _is_valid_state(self, state):
-        value = self.redis_connection.get(state)
-        return value is not None
+        url = '/teams/{}/memberships/{}?access_token={}'.format(
+            tid, username, token)
+        resp = requests.get(Goat.API + url)
+        return resp.status_code == 200
 
     def members_only(self, *teams):
-        """Authorization view_func decorator"""
+        """Authorization view_func decorator.
+        """
+
         def wrapper(f):
             @wraps(f)
             def wrapped(*args, **kwargs):
