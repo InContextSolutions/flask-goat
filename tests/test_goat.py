@@ -11,6 +11,7 @@ class TestGoat(unittest.TestCase):
         self.app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         self.app.config.setdefault('GOAT_ORGANIZATION', 'organization')
         self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com/callback')
+        self.goat = Goat(self.app)
 
     def test_smoke(self):
         with self.app.app_context():
