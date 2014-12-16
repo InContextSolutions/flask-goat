@@ -24,6 +24,7 @@ setup(
     test_requires=[
         'coverage',
         'nose',
+        'httmock',
         'pep8',
         'pyflakes',
     ],

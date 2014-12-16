@@ -1,5 +1,6 @@
 Flask
 coverage
+httmock
 nose
 pep8
 pyflakes
