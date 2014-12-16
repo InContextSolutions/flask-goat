@@ -102,7 +102,7 @@ class TestGoat(unittest.TestCase):
                 with self.app.test_request_context('/callback?state={}&code=123'.format(params['state'])):
                     pass
 
-    def test_get_token(self):
+    def test_get_token_and_username(self):
 
         @all_requests
         def response_content(u, request):
@@ -117,3 +117,5 @@ class TestGoat(unittest.TestCase):
             with self.app.app_context():
                 token = self.goat.get_token('thecode')
                 self.assertEqual(token, 'usertoken')
+                username = self.goat.get_username(token)
+                self.assertEqual(username, 'username')
