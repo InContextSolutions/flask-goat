@@ -54,7 +54,11 @@ class TestGoat(unittest.TestCase):
             self.assertRaises(AssertionError, Goat, app)
 
     def test_invalid_redis(self):
-        app = Flask('testinvalidredis')
+        app = Flask('invalidredis')
+        app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
+        app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
+        app.config.setdefault('GOAT_ORGANIZATION', 'organization')
+        app.config.setdefault('GOAT_CALLBACK', 'https://example.com/callback')
         app.config['GOAT_REDIS'] = {
             'method': 'fubar',
         }
