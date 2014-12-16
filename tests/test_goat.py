@@ -1,4 +1,5 @@
 import unittest
+# from httmock import all_requests, HTTMock, response
 from flask import Flask
 from flask.ext.goat import Goat
 
@@ -10,7 +11,7 @@ class TestGoat(unittest.TestCase):
         self.app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
         self.app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         self.app.config.setdefault('GOAT_ORGANIZATION', 'organization')
-        self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com/callback')
+        self.app.config.setdefault('GOAT_CALLBACK', 'https://yourhost.com/callback')
         self.goat = Goat(self.app)
 
     def test_auth_url(self):
@@ -54,13 +55,18 @@ class TestGoat(unittest.TestCase):
         app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
         app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         app.config.setdefault('GOAT_ORGANIZATION', 'organization')
-        app.config.setdefault('GOAT_CALLBACK', 'https://example.com/callback')
+        app.config.setdefault('GOAT_CALLBACK', 'https://yourhost.com/callback')
         app.config['GOAT_REDIS'] = {
             'method': 'fubar',
         }
         with app.app_context():
             self.assertRaises(ValueError, Goat, app)
 
-    def test_smoke_login(self):
+    def test_smoke_login_out(self):
         with self.app.test_client() as c:
             c.get('/login')
+            c.get('/logout')
+
+    def test_cb_err(self):
+        with self.app.test_client() as c:
+            c.get('/callback?error=uhoh')

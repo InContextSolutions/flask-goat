@@ -113,7 +113,7 @@ class Goat(object):
     def _callback(self):
         error = request.args.get('error', '')
         if error:
-            return (None, [])
+            abort(403)
         state = request.args.get('state', '')
         if not self.redis_connection.get(state):
             abort(403)
