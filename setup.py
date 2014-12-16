@@ -21,6 +21,12 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
+    test_requires=[
+        'coverage',
+        'nose',
+        'pep8',
+        'pyflakes',
+    ],
     install_requires=[
         'Flask',
         'redis',

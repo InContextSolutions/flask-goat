@@ -180,6 +180,7 @@ class Goat(object):
 
     def members_only(self, *teams):
         """Authorization view_func decorator.
+        Permits the intersection of team members to pass.
         """
 
         def wrapper(f):
@@ -192,5 +193,23 @@ class Goat(object):
                     if not self.is_team_member(token, session['user'], team):
                         abort(403)
                 return f(*args, **kwargs)
+            return wrapped
+        return wrapper
+
+    def members_union(self, *teams):
+        """Authorization view_func decorator.
+        Permits the union of team members to pass.
+        """
+
+        def wrapper(f):
+            @wraps(f)
+            def wrapped(*args, **kwargs):
+                if 'user' not in session:
+                    return redirect(url_for('login'))
+                token = self.redis_connection.get(session['user'])
+                for team in teams:
+                    if self.is_team_member(token, session['user'], team):
+                        return f(*args, **kwargs)
+                abort(403)
             return wrapped
         return wrapper
