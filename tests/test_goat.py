@@ -64,3 +64,7 @@ class TestGoat(unittest.TestCase):
         }
         with app.app_context():
             self.assertRaises(ValueError, Goat, app)
+
+    def test_smoke_login(self):
+        with self.app.test_client() as c:
+            c.get('/login')
