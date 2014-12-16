@@ -52,3 +52,11 @@ class TestGoat(unittest.TestCase):
         app.config.setdefault('GOAT_ORGANIZATION', 'organization')
         with app.app_context():
             self.assertRaises(AssertionError, Goat, app)
+
+    def test_invalid_redis(self):
+        app = Flask('testinvalidredis')
+        app.config['GOAT_REDIS'] = {
+            'method': 'fubar',
+        }
+        with app.app_context():
+            self.assertRaises(ValueError, Goat, app)
