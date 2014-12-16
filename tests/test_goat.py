@@ -13,14 +13,9 @@ class TestGoat(unittest.TestCase):
         self.app.config.setdefault('GOAT_CALLBACK', 'https://example.com/callback')
         self.goat = Goat(self.app)
 
-    def test_smoke(self):
-        with self.app.app_context():
-            Goat(self.app)
-
     def test_auth_url(self):
         with self.app.app_context():
-            g = Goat(self.app)
-            url = g._auth_url()
+            url = self.goat._auth_url()
             endpoint, params = url.split('?')
             self.assertEqual(endpoint, Goat.OAUTH + '/authorize')
             paramdict = dict([pair.split('=') for pair in params.split('&')])
