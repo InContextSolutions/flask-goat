@@ -98,7 +98,7 @@ class TestGoat(unittest.TestCase):
                 url = urlparse(self.goat._auth_url())
                 params = dict([q.split('=') for q in url.query.split('&')])
                 val = self.goat.redis_connection.get(params['state'])
-                self.assertEqual(val, '1')
+                self.assertEqual(str(val), '1')
                 with self.app.test_request_context('/callback?state={}&code=123'.format(params['state'])):
                     pass
 
