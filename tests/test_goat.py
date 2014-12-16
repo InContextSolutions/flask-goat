@@ -97,6 +97,23 @@ class TestGoat(unittest.TestCase):
             with self.app.app_context():
                 url = urlparse(self.goat._auth_url())
                 params = dict([q.split('=') for q in url.query.split('&')])
+                val = self.goat.redis_connection.get(params['state'])
+                self.assertEqual(val, '1')
                 with self.app.test_request_context('/callback?state={}&code=123'.format(params['state'])):
-                    token = self.goat.redis_connection.get('username')
-                    self.assertEqual(token, 'usertoken')
+                    pass
+
+    def test_get_token(self):
+
+        @all_requests
+        def response_content(u, request):
+            headers = {'content-type': 'application/json'}
+            content = {
+                'access_token': 'usertoken',
+                'login': 'username',
+            }
+            return response(204, content, headers, None, 5, request)
+
+        with HTTMock(response_content):
+            with self.app.app_context():
+                token = self.goat.get_token('thecode')
+                self.assertEqual(token, 'usertoken')
