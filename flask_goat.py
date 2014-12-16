@@ -24,7 +24,6 @@ class Goat(object):
 
     DEFAULTS = {
         'GOAT_SCOPE': 'read:org',
-        'GOAT_LOGIN_PAGE': 'login.html',
         'GOAT_REDIS': {
             'method': 'tcp',
             'host': 'localhost',
@@ -32,6 +31,24 @@ class Goat(object):
             'db': 0,
         }
     }
+
+    LOGIN = """
+    <html lang="en">
+    <head>
+    <title>{org}</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+    <div class="container" style="text-align:center;margin-top:50px;">
+    <h1>{org}</h1>
+    <button type="button" class="btn btn-primary">
+    <a href="{url}" style="color:white;">Login with GitHub</a>
+    </button>
+    </div>
+    </body>
+    </html>
+    """
 
     def __init__(self, app):
         if app is not None:
@@ -83,7 +100,11 @@ class Goat(object):
             return redirect(url_for('index'))
         login_page = current_app.config.get('GOAT_LOGIN_PAGE')
         url = self._auth_url()
-        return render_template(login_page, url=url)
+        if login_page is not None:
+            return render_template(login_page, url=url)
+        return Goat.LOGIN.format(
+            org=current_app.config.get('GOAT_ORGANIZATION'),
+            url=url)
 
     def _logout(self):
         session.clear()
