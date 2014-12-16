@@ -1,7 +1,12 @@
 import unittest
-# from httmock import all_requests, HTTMock, response
+from httmock import all_requests, HTTMock, response
 from flask import Flask
 from flask.ext.goat import Goat
+
+try:
+    from urlparse import urlparse
+except:
+    from urllib.parse import urlparse
 
 
 class TestGoat(unittest.TestCase):
@@ -69,4 +74,29 @@ class TestGoat(unittest.TestCase):
 
     def test_cb_err(self):
         with self.app.test_client() as c:
-            c.get('/callback?error=uhoh')
+            resp = c.get('/callback?error=uhoh')
+            self.assertEqual(resp.status_code, 403)
+
+    def test_cb_no_state(self):
+        with self.app.test_client() as c:
+            resp = c.get('/callback?state=123abc')
+            self.assertEqual(resp.status_code, 403)
+
+    def test_cb_full(self):
+
+        @all_requests
+        def response_content(u, request):
+            headers = {'content-type': 'application/json'}
+            content = {
+                'access_token': 'usertoken',
+                'login': 'username',
+            }
+            return response(204, content, headers, None, 5, request)
+
+        with HTTMock(response_content):
+            with self.app.app_context():
+                url = urlparse(self.goat._auth_url())
+                params = dict([q.split('=') for q in url.query.split('&')])
+                with self.app.test_request_context('/callback?state={}&code=123'.format(params['state'])):
+                    token = self.goat.redis_connection.get('username')
+                    self.assertEqual(token, 'usertoken')
