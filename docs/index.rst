@@ -30,22 +30,21 @@ Flask-Goat handles user authentication and manages roles via team membership wit
 +--------------------+--------------------------+-------------------------------------------+
 | Parameter Name     | Description              | Default                                   |
 +====================+==========================+===========================================+
-| GOAT_CLIENT_ID     | OAUTH id                 | Required. Default behavior will try to use|
-|                    |                          | GOAT_CLIENT_ID from environment.          |
+| GOAT_CLIENT_ID     | OAUTH id (required)      | Will try GOAT_CLIENT_ID from env          |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_CLIENT_SECRET | OAUTH secret             | Required. Default behavior will try to use|
-|                    |                          | GOAT_CLIENT_SECRET from environment.      |
+| GOAT_CLIENT_SECRET | OAUTH secret (required)  | Will try GOAT_CLIENT_SECRET from env      |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_ORGANIZATION  | Your GitHub organization | Required. No default.                     |
+| GOAT_ORGANIZATION  | Your GitHub organization | None                                      |
+|                    | (required)               |                                           |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_CALLBACK      | OAUTH callback           | Required.                                 |
+| GOAT_CALLBACK      | OAUTH callback (required)| None                                      |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_LOGIN_PAGE    | Login template to render | Optional. Default login page is provided. |
+| GOAT_LOGIN_PAGE    | Login template to render | Default login page is provided            |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_SCOPE         | Comma separated list of  | Optional. Default is read:org, which must |
-|                    | OAUTH permission scopes  | be included if overridden by user.        |
+| GOAT_SCOPE         | OAUTH scopes             | `read:org`, which must be provided        |
+|                    | Comma-separted           | if overridden                             |
 +--------------------+--------------------------+-------------------------------------------+
-| GOAT_REDIS         | Redis connection dict    | Optional. Default defined in source_.     |
+| GOAT_REDIS         | Redis connection dict    | Optional. Default in Goat.DEFAULTS        |
 +--------------------+--------------------------+-------------------------------------------+
 
 .. _source: https://github.com/InContextSolutions/flask-goat/blob/master/flask_goat.py#L28-L33
