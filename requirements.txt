@@ -1,9 +1,0 @@
-Flask
-coverage
-httmock
-nose
-pep8
-pyflakes
-redis
-requests
-simplejson
