@@ -1,6 +1,7 @@
 import unittest
+from simplejson import dumps
 from httmock import all_requests, HTTMock, response
-from flask import Flask
+from flask import Flask, session
 from flask.ext.goat import Goat
 
 try:
@@ -13,10 +14,11 @@ class TestGoat(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
+        self.app.secret_key = "secret"
         self.app.config.setdefault('GOAT_CLIENT_ID', 'publicid')
         self.app.config.setdefault('GOAT_CLIENT_SECRET', 'secretid')
         self.app.config.setdefault('GOAT_ORGANIZATION', 'organization')
-        self.app.config.setdefault('GOAT_CALLBACK', 'https://yourhost.com/callback')
+        self.app.config.setdefault('GOAT_CALLBACK', 'https://x.com/callback')
         self.goat = Goat(self.app)
 
     def test_auth_url(self):
@@ -94,28 +96,47 @@ class TestGoat(unittest.TestCase):
             return response(204, content, headers, None, 5, request)
 
         with HTTMock(response_content):
-            with self.app.app_context():
-                url = urlparse(self.goat._auth_url())
-                params = dict([q.split('=') for q in url.query.split('&')])
-                val = self.goat.redis_connection.get(params['state'])
-                self.assertIsNotNone(val)
-                with self.app.test_request_context('/callback?state={}&code=123'.format(params['state'])):
-                    pass
+            with self.app.test_client() as c:
+                with self.app.app_context():
+                    url = urlparse(self.goat._auth_url())
+                    params = dict([q.split('=') for q in url.query.split('&')])
+                    val = self.goat.redis_connection.get(params['state'])
+                    self.assertIsNotNone(val)
+                    c.get('/callback?state={}&code=123'.format(
+                        params['state']))
+                    self.assertTrue('user' in session)
 
-    def test_get_token_and_username(self):
+    def test_get_teams(self):
 
         @all_requests
         def response_content(u, request):
             headers = {'content-type': 'application/json'}
-            content = {
-                'access_token': 'usertoken',
-                'login': 'username',
-            }
+            content = [
+                {'name': 'team1', 'id': 1},
+                {'name': 'team2', 'id': 2},
+            ]
+            content = dumps(content)
             return response(204, content, headers, None, 5, request)
 
         with HTTMock(response_content):
             with self.app.app_context():
-                token = self.goat.get_token('thecode')
-                self.assertEqual(token, 'usertoken')
-                username = self.goat.get_username(token)
-                self.assertEqual(username, 'username')
+                teams = self.goat._get_org_teams('token')
+                self.assertEqual(teams['team1'], 1)
+                self.assertEqual(teams['team2'], 2)
+
+    def test_is_team_member(self):
+
+        @all_requests
+        def response_content(u, request):
+            headers = {'content-type': 'application/json'}
+            content = [
+                {'name': 'team1', 'id': 1},
+                {'name': 'team2', 'id': 2},
+            ]
+            content = dumps(content)
+            return response(200, content, headers, None, 5, request)
+
+        with HTTMock(response_content):
+            with self.app.app_context():
+                self.assertTrue(self.goat.is_team_member(
+                    'token', 'user', 'team1'))
