@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Flask-Goat &mdash; flask-goat 0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="flask-goat 0.0 documentation" href="#" /> 
+  </head>
+  <body>
+  
+  
+  <div class=indexwrapper>
+  
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="flask-goat">
+<h1>Flask-Goat<a class="headerlink" href="#flask-goat" title="Permalink to this headline">¶</a></h1>
+<p>Flask-Goat is a plugin for security and user administration via GitHub OAuth2 &amp; team structure within your organization.</p>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>The extension is available on PyPI:</p>
+<blockquote>
+<div>$ pip install Flask-Goat</div></blockquote>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://redis.io">Redis</a> is used for OAuth2 <a class="reference external" href="http://www.twobotechnologies.com/blog/2014/02/importance-of-state-in-oauth2.html">CSRF</a> security and server-side session management.</li>
+<li>GitHub OAuth <a class="reference external" href="https://help.github.com/enterprise/11.10.340/admin/articles/configuring-github-oauth">application</a> credentials.</li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Flask-Goat handles user authentication and manages roles via team membership within your organization. In order to accomplish this, the extension requires several configuration parameters be defined prior to initialization.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="29%" />
+<col width="48%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Parameter Name</th>
+<th class="head">Description</th>
+<th class="head">Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>GOAT_CLIENT_ID</td>
+<td>OAUTH id (required)</td>
+<td>Will try GOAT_CLIENT_ID from env</td>
+</tr>
+<tr class="row-odd"><td>GOAT_CLIENT_SECRET</td>
+<td>OAUTH secret (required)</td>
+<td>Will try GOAT_CLIENT_SECRET from env</td>
+</tr>
+<tr class="row-even"><td>GOAT_ORGANIZATION</td>
+<td>Your GitHub organization
+(required)</td>
+<td>None</td>
+</tr>
+<tr class="row-odd"><td>GOAT_CALLBACK</td>
+<td>OAUTH callback (required)</td>
+<td>None</td>
+</tr>
+<tr class="row-even"><td>GOAT_LOGIN_PAGE</td>
+<td>Login template to render</td>
+<td>Default login page is provided</td>
+</tr>
+<tr class="row-odd"><td>GOAT_SCOPE</td>
+<td>OAUTH scopes
+Comma-separted</td>
+<td><cite>read:org</cite>, which must be provided
+if overridden</td>
+</tr>
+<tr class="row-even"><td>GOAT_REDIS</td>
+<td>Redis connection dict</td>
+<td>Optional. Default in Goat.DEFAULTS</td>
+</tr>
+</tbody>
+</table>
+<p>Create a <tt class="xref py py-class docutils literal"><span class="pre">Goat</span></tt> instance initialize it with your app.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">from</span> <span class="nn">flask.ext.goat</span> <span class="kn">import</span> <span class="n">Goat</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">goat</span> <span class="o">=</span> <span class="n">Goat</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As an example, suppose your GitHub organization consists of three teams: Tech, Art, and DataScience. We can use that structure to control access to views by using Goat&#8217;s <tt class="xref py py-func docutils literal"><span class="pre">members_only()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">members_union()</span></tt> decorators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">public_index</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&#39;this is a public index; anyone can see it.&#39;</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/organization&#39;</span><span class="p">)</span>
+<span class="nd">@goat.members_only</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">the_organization</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;&quot;&quot;to view this page, you need to</span>
+<span class="s">    be part of the organization.&quot;&quot;&quot;</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/tech&#39;</span><span class="p">)</span>
+<span class="nd">@goat.members_only</span><span class="p">(</span><span class="s">&#39;Tech&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">tech_only</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;&quot;&quot;only members of the tech team</span>
+<span class="s">    can see this page.&quot;&quot;&quot;</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/art&#39;</span><span class="p">)</span>
+<span class="nd">@goat.members_only</span><span class="p">(</span><span class="s">&#39;Art&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">art_only</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;&quot;&quot;only members of the art</span>
+<span class="s">    team can see this page.&quot;&quot;&quot;</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/techandds&#39;</span><span class="p">)</span>
+<span class="nd">@goat.members_only</span><span class="p">(</span><span class="s">&#39;Tech&#39;</span><span class="p">,</span> <span class="s">&#39;DataScience&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">tech_and_ds</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;&quot;&quot;this page is for members of both the tech</span>
+<span class="s">    and the data science team (the intersection).&quot;&quot;&quot;</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">&#39;/techords&#39;</span><span class="p">)</span>
+<span class="nd">@goat.members_union</span><span class="p">(</span><span class="s">&#39;Tech&#39;</span><span class="p">,</span> <span class="s">&#39;DataScience&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">tech_or_ds</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;&quot;&quot;this page is for members of either the tech</span>
+<span class="s">    or the data science team (the union).&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="customizing-the-login-page">
+<h2>Customizing the Login Page<a class="headerlink" href="#customizing-the-login-page" title="Permalink to this headline">¶</a></h2>
+<p>Goat ships with a very simple login page that is used by default. You may elect to render a custom login page by changing GOAT_LOGIN_PAGE to a template of your choice. To complete the OAUTH handshake, Goat generates an OAuth URL and supplies it to the template under the name <cite>url</cite>. The template must provide the link to the user in some form. For example:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;{{url}}&quot;</span><span class="nt">&gt;</span>Login with GitHub<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+<p>Behind the scenes, Goati includes a CSRF &#8220;state&#8221; token in the URL and also stores it on Redis with 1000 second expiration to prevent unauthorized access. A callback handler verifies the CSRF token, checks membership, and sets a session cookie. With regard to the cookie, be sure to set a secret key! A server-side session is also set (again, with Redis).</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+    <a href="http://github.com/InContextSolutions/flask-goat"><img style="position: fixed; top: 0; right: 0; border: 0;"
+    src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  
+
+  
+  </div>
+  
+
+  </body>
+</html>
