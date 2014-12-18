@@ -32,23 +32,21 @@ class Goat(object):
         }
     }
 
-    LOGIN = """
-    <html lang="en">
-    <head>
-    <title>{org}</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-    </head>
-    <body>
-    <div class="container" style="text-align:center;margin-top:50px;">
-    <h1>{org}</h1>
-    <button type="button" class="btn btn-primary">
-    <a href="{url}" style="color:white;">Login with GitHub</a>
-    </button>
-    </div>
-    </body>
-    </html>
-    """
+    LOGIN = """<html lang="en">
+<head>
+<title>{org}</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container" style="text-align:center;margin-top:50px;">
+<h1>{org}</h1>
+<button type="button" class="btn btn-primary">
+<a href="{url}" style="color:white;">Login with GitHub</a>
+</button>
+</div>
+</body>
+</html>"""
 
     def __init__(self, app):
         if app is not None:
@@ -189,7 +187,6 @@ class Goat(object):
         """
 
         teams = self._get_org_teams(token)
-
         tid = teams.get(team, None)
         if not tid:
             return False

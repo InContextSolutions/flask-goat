@@ -45,5 +45,11 @@ def inter():
 def inter2():
     return "Reading, Writing: Insights."
 
+
+@app.route('/union2')
+@G.members_union('ReadWrite', 'Insights')
+def union2():
+    return "Reading, Writing: Insights."
+
 if __name__ == '__main__':
     app.run(debug=True, port=9000)
