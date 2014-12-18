@@ -1,3 +1,4 @@
+import os
 import requests
 import redis
 import simplejson as json
@@ -23,6 +24,8 @@ class Goat(object):
     REFRESH_TEAMS = 86400
 
     DEFAULTS = {
+        'GOAT_CLIENT_ID': os.getenv('GOAT_CLIENT_ID'),
+        'GOAT_CLIENT_SECRET': os.getenv('GOAT_CLIENT_SECRET'),
         'GOAT_SCOPE': 'read:org',
         'GOAT_REDIS': {
             'method': 'tcp',
@@ -56,14 +59,13 @@ class Goat(object):
         """Sets up callback and establishes Redis connection.
         """
 
+        for var in Goat.DEFAULTS:
+            app.config.setdefault(var, Goat.DEFAULTS[var])
+
         assert app.config.get('GOAT_CLIENT_ID') is not None
         assert app.config.get('GOAT_CLIENT_SECRET') is not None
         assert app.config.get('GOAT_ORGANIZATION') is not None
         assert app.config.get('GOAT_CALLBACK') is not None
-
-        for var in Goat.DEFAULTS:
-            app.config.setdefault(var, Goat.DEFAULTS[var])
-
         assert 'read:org' in app.config.get('GOAT_SCOPE').split(',')
 
         u = urlparse(app.config.get('GOAT_CALLBACK'))
