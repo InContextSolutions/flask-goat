@@ -138,7 +138,10 @@ class Goat(object):
             Goat.OAUTH + '/access_token?' + urlencode(params),
             headers={'Accept': 'application/json'}
         )
-        data = json.loads(resp.text)
+        try:
+            data = json.loads(resp.text)
+        except:
+            data = json.loads(resp.text.encode('latin-1'))
         return data.get('access_token', None)
 
     def get_username(self, token):
@@ -147,7 +150,10 @@ class Goat(object):
 
         url = Goat.API + '/user?access_token={}'.format(token)
         resp = requests.get(url, headers={'Accept': 'application/json'})
-        data = json.loads(resp.text)
+        try:
+            data = json.loads(resp.text)
+        except:
+            data = json.loads(resp.text.encode('latin-1'))
         return data.get('login', None)
 
     def _get_org_teams(self, token):
@@ -164,7 +170,10 @@ class Goat(object):
         )
 
         resp = requests.get(url, headers={'Accept': 'application/json'})
-        data = json.loads(resp.text)
+        try:
+            data = json.loads(resp.text)
+        except:
+            data = json.loads(resp.text.encode('latin-1'))
         teams = dict([(t['name'], t['id']) for t in data if 'name' in t])
 
         self.redis_connection.setex(
