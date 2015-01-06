@@ -141,7 +141,7 @@ class Goat(object):
         try:
             data = json.loads(resp.text)
         except:
-            data = json.loads(resp.text.encode('latin-1'))
+            print(type(resp.text))
         return data.get('access_token', None)
 
     def get_username(self, token):
@@ -153,7 +153,7 @@ class Goat(object):
         try:
             data = json.loads(resp.text)
         except:
-            data = json.loads(resp.text.encode('latin-1'))
+            print(type(resp.text))
         return data.get('login', None)
 
     def _get_org_teams(self, token):
@@ -173,7 +173,7 @@ class Goat(object):
         try:
             data = json.loads(resp.text)
         except:
-            data = json.loads(resp.text.encode('latin-1'))
+            print(type(resp.text))
         teams = dict([(t['name'], t['id']) for t in data if 'name' in t])
 
         self.redis_connection.setex(
