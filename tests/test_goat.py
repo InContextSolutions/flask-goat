@@ -115,7 +115,7 @@ class TestGoat(unittest.TestCase):
                 {'name': 'team1', 'id': 1},
                 {'name': 'team2', 'id': 2},
             ]
-            content = dumps(content)
+            content = dumps(content).encode('utf-8')
             return response(204, content, headers, None, 5, request)
 
         with HTTMock(response_content):
@@ -133,7 +133,7 @@ class TestGoat(unittest.TestCase):
                 {'name': 'team1', 'id': 1},
                 {'name': 'team2', 'id': 2},
             ]
-            content = dumps(content)
+            content = dumps(content).encode('utf-8')
             return response(200, content, headers, None, 5, request)
 
         with HTTMock(response_content):
