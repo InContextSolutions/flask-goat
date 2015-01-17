@@ -10,7 +10,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Goat',
-    version='0.2.0',
+    version='0.2.1',
     url='http://incontextsolutions.github.io/flask-goat/',
     license='MIT',
     author='Tristan Wietsma',
