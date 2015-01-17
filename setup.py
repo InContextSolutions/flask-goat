@@ -2,7 +2,7 @@
 Flask-Goat
 -------------
 
-Flask-Goat is a plugin for to support security and user administration via GitHub OAuth and organization structure. The plugin assumes membership in an organization as a basic requirement for authorization. User privilege level can be determined from team membership. A request context is built to support these concepts and can be used by endpoints. The plugin is intended to implemented via the 'before_request' handler.
+Flask-Goat is a plugin for security and user administration via GitHub OAuth2 & team structure within your organization.
 """
 
 from setuptools import setup
